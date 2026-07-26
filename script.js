@@ -16,7 +16,7 @@ const state = {
         {
             id: 1,
             sender: 'bot',
-            text: "Hello! 👋 I'm your ChopNow assistant. How can I help you today?",
+            text: `Hello! <span class="inline-icon">${Icons.wave(16)}</span> I'm your ChopNow assistant. How can I help you today?`,
             time: 'Just now'
         }
     ],
@@ -26,13 +26,13 @@ const state = {
 };
 
 const categories = [
-    { id: 'all', name: 'All', emoji: '🍽️', color: 'bg-gradient-orange' },
-    { id: 'burger', name: 'Burgers', emoji: '🍔', color: 'bg-gradient-yellow' },
-    { id: 'pizza', name: 'Pizza', emoji: '🍕', color: 'bg-gradient-red' },
-    { id: 'asian', name: 'Asian', emoji: '🍜', color: 'bg-gradient-green' },
-    { id: 'dessert', name: 'Desserts', emoji: '🍰', color: 'bg-gradient-purple' },
-    { id: 'healthy', name: 'Healthy', emoji: '🥗', color: 'bg-gradient-green' },
-    { id: 'drinks', name: 'Drinks', emoji: '🥤', color: 'bg-gradient-blue' }
+    { id: 'all', name: 'All', icon: 'all', color: 'bg-gradient-orange' },
+    { id: 'burger', name: 'Burgers', icon: 'burger', color: 'bg-gradient-yellow' },
+    { id: 'pizza', name: 'Pizza', icon: 'pizza', color: 'bg-gradient-red' },
+    { id: 'asian', name: 'Asian', icon: 'asian', color: 'bg-gradient-green' },
+    { id: 'dessert', name: 'Desserts', icon: 'dessert', color: 'bg-gradient-purple' },
+    { id: 'healthy', name: 'Healthy', icon: 'healthy', color: 'bg-gradient-green' },
+    { id: 'drinks', name: 'Drinks', icon: 'drinks', color: 'bg-gradient-blue' }
 ];
 
 const restaurants = [
@@ -372,6 +372,33 @@ function updateAuthUI() {
     }
 }
 
+function renderRestaurantSkeletons(count = 6) {
+    if (!elements.restaurantsGrid) return;
+    let html = '';
+    for (let i = 0; i < count; i++) {
+        html += `
+            <div class="skeleton-card">
+                <div class="skeleton-image skeleton-shimmer"></div>
+                <div class="skeleton-body">
+                    <div class="skeleton-line skeleton-shimmer"></div>
+                    <div class="skeleton-line short skeleton-shimmer"></div>
+                    <div class="skeleton-line skeleton-shimmer"></div>
+                </div>
+            </div>
+        `;
+    }
+    elements.restaurantsGrid.innerHTML = html;
+}
+
+function renderCategorySkeletons(count = 7) {
+    if (!elements.categoriesContainer) return;
+    let html = '';
+    for (let i = 0; i < count; i++) {
+        html += `<div class="skeleton-category skeleton-shimmer"></div>`;
+    }
+    elements.categoriesContainer.innerHTML = html;
+}
+
 function renderCategories() {
     if (!elements.categoriesContainer) return;
     
@@ -380,8 +407,10 @@ function renderCategories() {
     categories.forEach(category => {
         const categoryBtn = document.createElement('button');
         categoryBtn.className = `category-btn ${state.selectedCategory === category.id ? 'active ' + category.color : ''}`;
+        categoryBtn.setAttribute('aria-label', `Filter by ${category.name}`);
+        categoryBtn.setAttribute('aria-pressed', state.selectedCategory === category.id ? 'true' : 'false');
         categoryBtn.innerHTML = `
-            <span class="category-emoji">${category.emoji}</span>
+            <span class="category-icon">${Icons[category.icon](22)}</span>
             <span class="category-name">${category.name}</span>
         `;
         
@@ -422,7 +451,7 @@ function renderRestaurants() {
                         <img src="${restaurant.image}" alt="${restaurant.name}">
                         <div class="restaurant-image-overlay"></div>
                         <div class="restaurant-badge">${restaurant.badge}</div>
-                        <button class="restaurant-fav-btn">
+                        <button class="restaurant-fav-btn" aria-label="${isFavorited ? 'Remove from favorites' : 'Add to favorites'}" aria-pressed="${isFavorited}">
                             <i class="fas fa-heart ${isFavorited ? 'favorited' : ''}"></i>
                         </button>
                         <div class="restaurant-info-overlay">
@@ -760,7 +789,7 @@ function renderFavoritesSidebar() {
     sidebar.innerHTML = `
         <div class="favorites-header">
             <h2 class="favorites-title">My Favorites</h2>
-            <button class="favorites-close-btn" id="close-favorites">
+            <button class="favorites-close-btn" id="close-favorites" aria-label="Close favorites">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -1582,27 +1611,28 @@ function sendMessage(text, sender = 'user') {
 
 function getBotResponse(message) {
     const lowerMsg = message.toLowerCase();
-    
+    const icon = (name, size = 15) => `<span class="inline-icon">${Icons[name](size)}</span>`;
+
     if (lowerMsg.includes('order') && lowerMsg.includes('where')) {
-        return "I can help you track your order! First, make sure you're logged in, then click on 'Track Order' in your user menu. 🚚";
+        return "I can help you track your order! First, make sure you're logged in, then click on 'Track Order' in your user menu. " + icon('truck');
     } else if (lowerMsg.includes('address') && lowerMsg.includes('change')) {
-        return "To change your delivery address, go to your profile settings. You can save multiple addresses and select your preferred one at checkout. 🏠";
+        return "To change your delivery address, go to your profile settings. You can save multiple addresses and select your preferred one at checkout. " + icon('home');
     } else if (lowerMsg.includes('refund')) {
-        return "Refunds are processed within 5-7 business days. If you haven't received yours after this period, please contact our support team at support@chopnow.com. 💰";
+        return "Refunds are processed within 5-7 business days. If you haven't received yours after this period, please contact our support team at support@chopnow.com. " + icon('money');
     } else if (lowerMsg.includes('support') || lowerMsg.includes('agent') || lowerMsg.includes('human')) {
-        return "I'm connecting you with a human agent... Please hold on for a moment. In the meantime, you can call us at +234 800 000 0000. 📞";
+        return "I'm connecting you with a human agent... Please hold on for a moment. In the meantime, you can call us at +234 800 000 0000. " + icon('phone');
     } else if (lowerMsg.includes('hello') || lowerMsg.includes('hi') || lowerMsg.includes('hey')) {
-        return "Hello there! 👋 How can I assist you today?";
+        return "Hello there! " + icon('wave', 16) + " How can I assist you today?";
     } else if (lowerMsg.includes('thank') || lowerMsg.includes('thanks')) {
-        return "You're welcome! Is there anything else I can help you with? 😊";
+        return "You're welcome! Is there anything else I can help you with? " + icon('smile');
     } else if (lowerMsg.includes('menu') || lowerMsg.includes('food') || lowerMsg.includes('restaurant')) {
-        return "We have a wide variety of restaurants and cuisines available. Use the search bar or browse categories to find your favorite foods! 🍔🍕";
+        return "We have a wide variety of restaurants and cuisines available. Use the search bar or browse categories to find your favorite foods! " + icon('cuisine');
     } else if (lowerMsg.includes('price') || lowerMsg.includes('cost')) {
-        return "Prices vary by restaurant and item. You can see the price of each item on the restaurant's menu page. 💰";
+        return "Prices vary by restaurant and item. You can see the price of each item on the restaurant's menu page. " + icon('money');
     } else if (lowerMsg.includes('delivery') && lowerMsg.includes('time')) {
-        return "Delivery times vary by restaurant and your location. You can see estimated delivery times on each restaurant card. ⏱️";
+        return "Delivery times vary by restaurant and your location. You can see estimated delivery times on each restaurant card. " + icon('truck');
     } else {
-        return "I understand you're asking about: \"" + message + "\". For detailed assistance with this, I recommend contacting our support team at support@chopnow.com or calling +234 800 000 0000. 📞";
+        return "I understand you're asking about: \"" + message + "\". For detailed assistance with this, I recommend contacting our support team at support@chopnow.com or calling +234 800 000 0000. " + icon('phone');
     }
 }
 
@@ -2177,6 +2207,9 @@ function debounce(func, wait) {
     };
 }
 
+
+
+
 function initApp() {
 
     if (!elements.categoriesContainer || !elements.restaurantsGrid) {
@@ -2184,13 +2217,24 @@ function initApp() {
         return;
     }
     
-    loadCartFromLocalStorage(); 
-    renderCategories();
-    renderRestaurants();
+    
+    loadCartFromLocalStorage();
+    renderCategorySkeletons();
+    renderRestaurantSkeletons();
     attachEventListeners();
-    updateCartCount(); 
+    updateCartCount();
     initExtendedApp();
     extendCartSidebar();
+
+    const partnerAvatarSlot = document.getElementById('partner-avatar-slot');
+    if (partnerAvatarSlot && typeof Icons !== 'undefined') {
+        partnerAvatarSlot.innerHTML = Icons.deliveryPerson(48);
+    }
+
+    setTimeout(() => {
+        renderCategories();
+        renderRestaurants();
+    }, 500);
 }
 
 window.toggleChat = toggleChat;
